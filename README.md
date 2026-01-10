@@ -157,26 +157,27 @@ DeviceProcessEvents
 
 ### 8. Credential Access: Credential Theft 
 
-Searched for evidence of credential file access and discovered that the threat actor executed the following command to....
-
-terminal services enumeration and discovered that the command qwinsta was executed in order to enumerate RDP sessions, session IDs, session states, and logged-in users to identify active administrators and avoid detection. The attacker used this at 4:08 AM (before creating the backdoor account at 4:51 AM), likely to identify active administrators and see who was logged into the CEO's machine.
+Searched for evidence of credential file access and discovered that the threat actor executed the following command to access stored credentials: cat /backups/configs/all-credentials.txt. The plaintext credential file likely contained stored authentication information and was accessed on the backup server. 
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where ProcessCommandLine has_any ("qwinsta", "query session")
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-backupsrv.zi5bvzlx0idetcyt0okhu05hda.cx.internal.cloudapp.net"
+| where FileName in~ ("cat", "grep")
+| where ProcessCommandLine contains "password" 
+    or ProcessCommandLine contains "passwd"
+    or ProcessCommandLine contains "credentials"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="1973" height="297" alt="BT_Q12" src="https://github.com/user-attachments/assets/6f5920bd-9f6c-4929-b0dd-714fe66c5bb7" />
+<img width="2194" height="676" alt="DITW_Q9" src="https://github.com/user-attachments/assets/77cd6f48-4521-4c63-9a66-2f818bef8111" />
 
 ---
 
-### 9. Discovery: Domain Trust Enumeration
+### 9. Impact: Data Destruction
 
 Searched for evidence of domain trust enumeration and discovered that the attacker utilized the following command to enumerate all trust relationships in order to map lateral movement opportunities across domain boundaries: "nltest.exe" /domain_trusts /all_trusts. It's important to note that "nltest.exe" is a native Windows domain trust utility, "/domain_trusts" lists domain trust relationships, and "/all_trusts" shows all trust types (i.e., direct, forest, external, not just direct trusts). This allows the attacker to map out trust relationships between domains, potential lateral movement paths, and connected forests and external domains.
 
