@@ -7,13 +7,13 @@ Azuki Import & Export Trading Co. experienced a catastrophic ransomware attack o
 The threat actor demonstrated advanced operational maturity through coordinated backup destruction on Linux systems, simultaneous ransomware deployment to multiple Windows targets using stolen credentials, multiple layers of recovery inhibition including shadow copy deletion and backup catalog removal, registry and scheduled task persistence mechanisms, and USN journal deletion for anti-forensics. This investigation reconstructs the complete attack timeline documenting tactics consistent with ADE SPIDER (APT-SL44, SilentLynx) operations targeting logistics companies in the East Asia region.
 
 ## Background
-- **Incident Date:** November 25, 2025  
-- **Compromised Host:** azuki-adminpc (CEO Administrative PC)  
-- **Threat Actor:** ADE SPIDER (APT-SL44, SilentLynx)  
+- **Incident Date:** November 25-27, 2025  
+- **Compromised Host:** Linux backup server (azuki-backupsrv), Multiple Windows systems  
+- **Threat Actor:** ADE SPIDER (APT-SL44, SilentLynx)
 - **Motivation:** Financial  
 - **Target Profile:** Logistics and import/export companies, East Asia region  
 - **Typical Dwell Time:** 21-45 days  
-- **Attack Sophistication:** High, featuring Meterpreter C2, DPAPI credential theft, and multi-stage exfiltration
+- **Attack Sophistication:** High, featuring coordinated multi-platform ransomware operations
 
 ---
 
