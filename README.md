@@ -157,7 +157,7 @@ DeviceProcessEvents
 
 ### 8. Credential Access: Credential Theft 
 
-Searched for evidence of credential file access and discovered that the threat actor executed the following command to...
+Searched for evidence of credential file access and discovered that the threat actor executed the following command to....
 
 terminal services enumeration and discovered that the command qwinsta was executed in order to enumerate RDP sessions, session IDs, session states, and logged-in users to identify active administrators and avoid detection. The attacker used this at 4:08 AM (before creating the backdoor account at 4:51 AM), likely to identify active administrators and see who was logged into the CEO's machine.
 
