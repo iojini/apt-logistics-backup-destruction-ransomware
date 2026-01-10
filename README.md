@@ -179,27 +179,28 @@ DeviceProcessEvents
 
 ### 9. Impact: Data Destruction
 
-Searched for evidence of domain trust enumeration and discovered that the attacker utilized the following command to enumerate all trust relationships in order to map lateral movement opportunities across domain boundaries: "nltest.exe" /domain_trusts /all_trusts. It's important to note that "nltest.exe" is a native Windows domain trust utility, "/domain_trusts" lists domain trust relationships, and "/all_trusts" shows all trust types (i.e., direct, forest, external, not just direct trusts). This allows the attacker to map out trust relationships between domains, potential lateral movement paths, and connected forests and external domains.
+Searched for evidence of data destruction and discovered that the threat actor executed the following command to destroy back up files: rm -rf /backups/archives. The threat actor deleted all backup directories as root, including destroying daily, weekly, monthly, database, configuration, and workstation backups, thereby eliminating all recovery options. The full command is as follows: rm -rf /backups/archives /backups/azuki-adminpc /backups/azuki-fileserver /backups/azuki-logisticspc /backups/config-backups /backups/configs /backups/daily /backups/database-backups /backups/databases /backups/fileserver /backups/logs /backups/monthly /backups/weekly /backups/workstations.
+
 
 **Query used to locate events:**
 
 ```kql
-DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where TimeGenerated >= datetime(2025-11-25)
-| where ProcessCommandLine has_any ("domain_trusts", "trusted_domains")
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
-| order by TimeGenerated asc
+DeviceProcessEvents 
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-backupsrv.zi5bvzlx0idetcyt0okhu05hda.cx.internal.cloudapp.net"
+| where FileName in~ ("rm", "shred") 
+| where ProcessCommandLine contains "/backups" 
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2120" height="368" alt="BT_Q13" src="https://github.com/user-attachments/assets/da28c365-23f0-4f98-8a11-54d0f43c3ade" />
+<img width="2805" height="856" alt="DITW_Q10" src="https://github.com/user-attachments/assets/d6b9adf0-10ef-4bb3-acaf-7e7c898dcfab" />
 
 ---
 
-### 10. Discovery: Network Connection Enumeration  
+### 10. Impact: Service Stop  
 
-Searched for evidence of network connection enumeration and discovered that the attacker executed the netstat -ano command, showing all connections (-a), in numerical form (-n), with owning process IDs (-o) to identify active sessions and potential lateral movement targets. Therefore, the netstat -ano command provided the attacker with a complete view of active TCP/IP connections, listening ports, and associated process IDs, enabling identification of interesting services and remote systems.
+Searched for evidence of service disruption and discovered that the threat actor executed the following command to stop the backup service: systemctl stop cron.
 
 **Query used to locate events:**
 
