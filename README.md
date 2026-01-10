@@ -200,65 +200,67 @@ DeviceProcessEvents
 
 ### 10. Impact: Service Stop  
 
-Searched for evidence of service disruption and discovered that the threat actor executed the following command to stop the backup service: systemctl stop cron.
+Searched for evidence of service disruption and discovered that the threat actor executed the following command as root to stop the backup service: systemctl stop cron. The cron service was stopped using systemctl, immediately disabling all scheduled backup jobs. This was likely done to prevent any automated backup creation during the ransomware deployment phase.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where InitiatingProcessAccountName == "yuki.tanaka"
-| where FileName has_any ("netstat.exe", "net.exe") 
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-backupsrv.zi5bvzlx0idetcyt0okhu05hda.cx.internal.cloudapp.net"
+| where FileName == "systemctl"
+| where ProcessCommandLine has "stop"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2375" height="604" alt="BT_Q14" src="https://github.com/user-attachments/assets/6a9cd5c1-8075-4a8e-b5ae-18d87c0a5aa9" />
+<img width="2018" height="363" alt="DITW_Q11" src="https://github.com/user-attachments/assets/faf017a1-a32f-4d9a-8426-c4a2fbe4d82d" />
 
 ---
-### 11. Discovery: Password Database Search
+### 11. Impact: Service Disabled
 
-Searched for evidence of password database discovery and found that the attacker utilized the "cmd.exe" /c where /r C:\Users *.kdbx command to recursively search all user directories for KeePass password database files (.kdbx). This would have allowed the attacker to discover credential stores containing multi-system access credentials.
+Searched for evidence of permanent service disruption and discovered that the threat actor executed the following command to permanently disable the backup service: systemctl disable cron. This permanently disabled the cron service from starting on boot, ensuring backup jobs would not resume even after system restart.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where ProcessCommandLine has_any (".kdbx", ".kdb", ".wallet", ".psafe", "password", "credential")
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-backupsrv.zi5bvzlx0idetcyt0okhu05hda.cx.internal.cloudapp.net"
+| where FileName == "systemctl"
+| where ProcessCommandLine has "disable"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2670" height="745" alt="BT_Q15" src="https://github.com/user-attachments/assets/4ddac127-523b-453a-a8b4-d12ce6d72a92" />
+<img width="1994" height="324" alt="DITW_Q12" src="https://github.com/user-attachments/assets/e8e7e8e3-48e1-4721-93e7-8252def3158b" />
 
 ---
 
-### 12. Discovery: Credential File
+### 12. Lateral Movement: Remote Execution & Deployment
 
-Searched for evidence of password file discovery and found that the attacker likely found the following password file: OLD-Passwords.txt. It was stored in plaintext on the CEO's desktop, representing a critical security failure and likely providing the attacker with immediate access to multiple systems.
+Searched for evidence of remote execution tool usage and discovered that the threat actor utilized the following tool to execute commands on remote systems: PsExec64.exe. PsExec64 is a Sysinternals remote administration tool that is commonly repurposed by threat actors for malware deployment. The tool was executed from the compromised CEO workstation (i.e., azuki-adminpc) and likely used to execute commands on multiple remote Windows systems simultaneously. In addition, the threat actor executed the following deployment command: "PsExec64.exe" \\10.1.0.102 -u kenji.sato -p ********** -c -f C:\Windows\Temp\cache\silentlynx.exe. The full PsExec64 command shows the target system (10.1.0.102), use of the kenji.sato account credentials, and the path to the ransomware payload executable. The -c flag copies the specified executable to the remote host for execution, and -f forces the copy even if a file with the same name already exists on the remote system. The the ransomware payload "silentlynx.exe" was deployed to C:\Windows\Temp\cache\.
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where FileName endswith ".txt"
-| where FileName contains "password" or FileName contains "pass" or FileName contains "cred"
-| project TimeGenerated, DeviceName, FileName, FolderPath, ActionType
-| order by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName in~ ("psexec.exe", "psexec64.exe", "wmic.exe", "wmiexec.py", "smbexec.py", "paexec.exe")
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2658" height="673" alt="BT_Q16B" src="https://github.com/user-attachments/assets/8158f390-7ce1-4e72-afb7-2cb571aca849" />
+<img width="2771" height="887" alt="DITW_Q13_14_15" src="https://github.com/user-attachments/assets/e958a00a-0d1e-47f9-9f8b-46d8a3b6c0f6" />
 
 ---
 
-### 13. Collection: Data Staging Directory 
+### 13. Impact: Shadow Service Stopped 
 
-Searched for evidence of a data staging directory and discovered that the attacker staged the stolen data archives in C:\ProgramData\Microsoft\Crypto\staging. The staging directory mimics the legitimate Microsoft cryptographic service directory to avoid suspicion during incident response and was used to organize five archives of stolen business data.
+Searched for evidence of... 
+
+a data staging directory and discovered that the attacker staged the stolen data archives in C:\ProgramData\Microsoft\Crypto\staging. The staging directory mimics the legitimate Microsoft cryptographic service directory to avoid suspicion during incident response and was used to organize five archives of stolen business data.
 
 **Query used to locate events:**
 
