@@ -19,23 +19,21 @@ The threat actor demonstrated advanced operational maturity through coordinated 
 
 ## Investigation Steps
 
-### 1. Lateral Movement: Source System & Compromised Credentials
+### 1. Lateral Movement: Remote Access 
 
-Searched for the source of lateral movement to the CEO's administrative PC and discovered consistent connection patterns from source IP address 10.1.0.204. The attacker established multiple RemoteInteractive sessions to azuki-adminpc during early morning hours (4-6 AM) on November 25, 2005. The clustering of connections during early morning hours indicates deliberate off-hours operational security to avoid detection. In addition, the investigation revealed that the yuki.tanaka account was compromised and subsequently reused for lateral movement to the CEO's administrative workstation. This account likely provided the attacker with elevated privileges and access to sensitive business systems. The investigation also confirmed that lateral movement from source IP 10.1.0.204 targeted azuki-adminpc, the CEO's administrative workstation.
+Searched for evidence of SSH lateral movement and discovered that the threat actor executed the following remote access command from the compromised workstation (azuki-adminpc): "ssh.exe" backup-admin@10.1.0.189. This command established remote access to the Linux backup server at 10.1.0.189 using the backup-admin account. This lateral movement occurred after the initial CEO PC compromise, indicating a deliberate escalation phase targeting recovery infrastructure.
 
 **Query used to locate events:**
 
 ```kql
-DeviceLogonEvents
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
 | where DeviceName contains "azuki"
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where LogonType == "RemoteInteractive"
-| where RemoteIP != ""
-| project TimeGenerated, DeviceName, RemoteIP, AccountName, LogonType
-| order by TimeGenerated desc
+| where FileName in~ ("ssh.exe", "ssh")
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
 
 ```
-<img width="2368" height="815" alt="BT_Q1" src="https://github.com/user-attachments/assets/0e866f91-b1ba-43df-b75a-3944af3ba2d5" />
+<img width="2067" height="281" alt="DITW_Q1" src="https://github.com/user-attachments/assets/4f9fd76c-5919-4a7e-a0bc-4e27d30936f1" />
 
 ---
 
