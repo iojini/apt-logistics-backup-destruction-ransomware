@@ -95,30 +95,32 @@ DeviceProcessEvents
 
 ---
 
-### 5. Persistence: C2 Implant 
+### 5. Discovery: Account Enumeration
 
-Searched for evidence of command and control implants used by attackers to maintain persistent access and enable remote control of compromised systems. The investigation revealed the extraction of the C2 beacon meterpreter.exe from the archive. Meterpreter is the famous payload/beacon from the Metasploit Framework, one of the most well-known offensive security/penetration testing tools. Meterpreter (short for "Meta-Interpreter") is a sophisticated C2 implant that runs in memory, provides interactive remote access, has extensive post-exploitation capabilities, and is commonly used by APT groups who repurpose legitimate pentesting tools.
+Searched for evidence of local account enumeration on the Linux backup server and discovered that the threat actor executed the following command: cat /etc/passwd. The /etc/passwd file contains user account information (e.g, usernames, UIDs, home directories, shells) and was accessed to enumerate all local user accounts on the backup server. This likely helped the threat actor to understand what accounts exist on the system, potentially providing intelligence for privilege escalation and lateral movement planning.
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where FolderPath has @"C:\Windows\Temp\cache"
-| where ActionType == "FileCreated"
-| where FileName endswith ".exe"
-| project TimeGenerated, DeviceName, FileName, FolderPath
-| order by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-backupsrv.zi5bvzlx0idetcyt0okhu05hda.cx.internal.cloudapp.net"
+| where FileName in~ ("cat", "id", "whoami", "users", "w", "who")
+| where ProcessCommandLine contains "/etc/passwd" 
+    or ProcessCommandLine contains "/etc/shadow"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated desc
 
 ```
-<img width="2202" height="826" alt="BT_Q7" src="https://github.com/user-attachments/assets/b9f6e6fb-2a15-483f-a337-cc7e61edfc44" />
+<img width="2380" height="288" alt="DITW_Q6" src="https://github.com/user-attachments/assets/91ffcae1-91b7-48bb-b717-ee0b93286f1c" />
 
 ---
 
-### 6. Persistence: Named Pipe 
+### 6. Discovery: Scheduled Job Reconnaissance 
 
-Searched for evidence of named pipe event actions typically used to provide stealthy interprocess communication channels for malware. The named pipe "\Device\NamedPipe\msf-pipe-5902" was created by meterpreter.exe 3 minutes after meterpreter.exe was extracted from the archive (4:21:33 AM extraction → 4:24:35 AM pipe creation) using the Metasploit Framework naming convention (msf-pipe-*).
+Searched for evidence of n
+
+amed pipe event actions typically used to provide stealthy interprocess communication channels for malware. The named pipe "\Device\NamedPipe\msf-pipe-5902" was created by meterpreter.exe 3 minutes after meterpreter.exe was extracted from the archive (4:21:33 AM extraction → 4:24:35 AM pipe creation) using the Metasploit Framework naming convention (msf-pipe-*).
 
 **Query used to locate events:**
 
