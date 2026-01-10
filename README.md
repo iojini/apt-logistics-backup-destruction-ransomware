@@ -21,7 +21,7 @@ The threat actor demonstrated advanced operational maturity through coordinated 
 
 ### 1. Lateral Movement: Remote Access & Compromised Account
 
-Searched for evidence of SSH lateral movement and discovered that the threat actor executed the following remote access command from the compromised workstation (azuki-adminpc): "ssh.exe" backup-admin@10.1.0.189. This command established remote access to the Linux backup server at 10.1.0.189. This lateral movement occurred after the initial CEO PC compromise, indicating a deliberate escalation phase targeting recovery infrastructure. In addition, analysis of the SSH connection details confirmed that the attacker used the backup-admin account to access the Linux backup server. This administrative account likely had elevated privileges on the backup infrastructure, providing full access to backup directories and scheduled jobs.
+Searched for evidence of SSH lateral movement and discovered that the threat actor executed the following remote access command from the compromised workstation (azuki-adminpc): "ssh.exe" backup-admin@10.1.0.189. This established remote access to the Linux backup server at 10.1.0.189. This lateral movement occurred after the initial CEO PC compromise, indicating a deliberate escalation phase targeting recovery infrastructure. In addition, analysis of the SSH connection details confirmed that the attacker used the backup-admin account to access the Linux backup server. This administrative account likely had elevated privileges on the backup infrastructure, providing full access to backup directories and scheduled jobs.
 
 **Query used to locate events:**
 
@@ -57,7 +57,7 @@ DeviceNetworkEvents
 
 ### 3. Discovery: Directory Enumeration
 
-Searched for evidence of directory enumeration and discovered that the threat actor executed the following directory listing command with detailed output (-la flags) to enumerate the main backup directory structure: ls --color=auto -la /backups/. This command provided the threat actor with a detailed view of the backup directory structure, file permissions, and timestamps. This was followed by a more targeted enumeration of subdirectories (configs/, fileserver/, workstations/, etc).
+Searched for evidence of directory enumeration and discovered that the threat actor executed the following directory listing command with detailed output (-la flags) to enumerate the main backup directory structure: ls --color=auto -la /backups/. This provided the threat actor with a detailed view of the backup directory structure, file permissions, and timestamps. This was followed by a more targeted enumeration of subdirectories (configs/, fileserver/, workstations/, etc).
 
 **Query used to locate events:**
 
@@ -97,7 +97,7 @@ DeviceProcessEvents
 
 ### 5. Discovery: Account Enumeration
 
-Searched for evidence of local account enumeration on the Linux backup server and discovered that the threat actor executed the following command: cat /etc/passwd. The /etc/passwd file contains user account information (e.g, usernames, UIDs, home directories, shells) and was accessed to enumerate all local user accounts on the backup server. This likely helped the threat actor to understand what accounts exist on the system, potentially providing intelligence for privilege escalation and lateral movement planning.
+Searched for evidence of local account enumeration on the Linux backup server and discovered that the threat actor executed the following command to access the /etc/passwd file: cat /etc/passwd. The /etc/passwd file contains user account information (e.g, usernames, UIDs, home directories, shells) and was accessed in order to enumerate all local user accounts on the backup server. This likely helped the threat actor to understand what accounts exist on the system, potentially providing intelligence for privilege escalation and lateral movement planning.
 
 **Query used to locate events:**
 
@@ -118,31 +118,29 @@ DeviceProcessEvents
 
 ### 6. Discovery: Scheduled Job Reconnaissance 
 
-Searched for evidence of n
-
-amed pipe event actions typically used to provide stealthy interprocess communication channels for malware. The named pipe "\Device\NamedPipe\msf-pipe-5902" was created by meterpreter.exe 3 minutes after meterpreter.exe was extracted from the archive (4:21:33 AM extraction → 4:24:35 AM pipe creation) using the Metasploit Framework naming convention (msf-pipe-*).
+Searched for evidence of scheduled job enumeration and discovered that the threat actor executed the following command to access the crontab file in order to enumerate automated backup schedules: cat /etc/crontab. This revealed system-wide scheduled backup jobs, allowing the threat actor to understand backup schedules and timing for maximum impact.
 
 **Query used to locate events:**
 
 ```kql
-DeviceEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where InitiatingProcessRemoteSessionIP == "10.1.0.204"
-| where InitiatingProcessFileName == "meterpreter.exe"
-| where ActionType == "NamedPipeEvent"
-| extend PipeName = parse_json(AdditionalFields).PipeName
-| project TimeGenerated, DeviceName, ActionType, PipeName, InitiatingProcessFileName
-| order by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-backupsrv.zi5bvzlx0idetcyt0okhu05hda.cx.internal.cloudapp.net"
+| where FileName in~ ("crontab", "cat", "ls", "systemctl")
+| where ProcessCommandLine contains "cron" 
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2120" height="667" alt="BT_Q8" src="https://github.com/user-attachments/assets/72da30ab-ca45-41f2-93bd-19bd574de8b0" />
+<img width="2688" height="928" alt="DITW_Q7" src="https://github.com/user-attachments/assets/34e33cad-83ab-4d4e-b2f5-062811d9f824" />
 
 ---
 
-### 7. Credential Access: Decoded Account Creation, Backdoor Account, & Decoded Privilege Escalation Command
+### 7. Command and Control: Tool Transfer
 
-Searched for evidence of encoded payloads and discovered two Base64-encoded PowerShell commands. The decoded account creation command was the following: net user yuki.tanaka2 B@ckd00r2024! /add. The decoded privilege escalation command was the following: net localgroup Administrators yuki.tanaka2 /add. Therefore, the attacker created a backdoor account yuki.tanaka2 (similar to the compromised user yuki.tanaka) with administrator privileges using Base64 obfuscation to evade detection. 
+Searched for evidence of external tool downloads and discovered that the threat actor executed the following command to..
+
+encoded payloads and discovered two Base64-encoded PowerShell commands. The decoded account creation command was the following: net user yuki.tanaka2 B@ckd00r2024! /add. The decoded privilege escalation command was the following: net localgroup Administrators yuki.tanaka2 /add. Therefore, the attacker created a backdoor account yuki.tanaka2 (similar to the compromised user yuki.tanaka) with administrator privileges using Base64 obfuscation to evade detection. 
  
 **Query used to locate events:**
 
