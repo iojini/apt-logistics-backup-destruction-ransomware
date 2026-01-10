@@ -57,7 +57,7 @@ DeviceNetworkEvents
 
 ### 3. Discovery: Directory Enumeration
 
-Searched for evidence of directory enumeration and discovered that the threat actor executed the following directory listing command with detailed output (-la flags) to enumerate the main backup directory structure: ls --color=auto -la /backups/. This command provided the threat actor with a detailed view of the backup directory structure, file permissions, and timestamps.
+Searched for evidence of directory enumeration and discovered that the threat actor executed the following directory listing command with detailed output (-la flags) to enumerate the main backup directory structure: ls --color=auto -la /backups/. This command provided the threat actor with a detailed view of the backup directory structure, file permissions, and timestamps. This was followed by a more targeted enumeration of subdirectories (configs/, fileserver/, workstations/, etc).
 
 **Query used to locate events:**
 
@@ -75,23 +75,23 @@ DeviceProcessEvents
 
 ---
 
-### 4. Execution: Archive Extraction 
+### 4. Discovery: File Search 
 
-Searched for evidence of the extraction of the KB5044273-x64.7z archive and discovered that the attacker used the following command to extract the password-protected archive using 7-Zip with password bypass and automatic yes to prompts: "7z.exe" x C:\Windows\Temp\cache\KB5044273-x64.7z -p******** -oC:\Windows\Temp\cache\ -y.
+Searched for evidence of file search operations by the threat actor and discovered that the threat actor executed the following find command to locate all compressed backup archives in tar.gz format: find /backups -name *.tar.gz. This targeted search identified specific backup files for subsequent deletion, demonstrating the systematic targeting of recovery data for destruction before deploying ransomware.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where InitiatingProcessRemoteSessionIP == "10.1.0.204"
-| where FileName in~ ("7z.exe", "7za.exe", "7zg.exe", "winrar.exe", "unzip.exe", "tar.exe")
-| project TimeGenerated, DeviceName, FileName, ProcessCommandLine
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName == "find"
+| where ProcessCommandLine contains "backup"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
 | order by TimeGenerated asc
 
 ```
-<img width="2569" height="953" alt="BT_Q6" src="https://github.com/user-attachments/assets/9745ff1f-e811-4def-b9dc-9856d960a0d5" />
+<img width="2517" height="747" alt="DITW_Q5" src="https://github.com/user-attachments/assets/cf882bc7-0121-472d-81b7-adb8e2db365b" />
 
 ---
 
