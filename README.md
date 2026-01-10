@@ -37,23 +37,21 @@ DeviceProcessEvents
 
 ---
 
-### 2. Execution: Payload Hosting Service
+### 2. Lateral Movement: Attack Source
 
-Searched for evidence of connections to external file hosting services and discovered that the attacker used the file hosting service litter.catbox.moe to to host the malicious payload. This temporary anonymous file hosting service provides automatic file deletion after download, complicating forensic recovery. In addition, this represents infrastructure rotation from previous operations, demonstrating operational security awareness and attempts at evading network-based blocking.
+Searched for the attack source (i.e., the IP address that initiated the connection to the backup server) by examining network connections to the backup server and identified the source IP address as 10.1.0.108 (i.e., azuki-adminpc). The connection was established over SSH port 22, confirming the compromised CEO workstation as the pivot point for the attack. This also confirms the attack progression from executive system compromise to backup infrastructure targeting.
 
 **Query used to locate events:**
 
 ```kql
 DeviceNetworkEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
 | where DeviceName == "azuki-adminpc"
-| where InitiatingProcessRemoteSessionIP == "10.1.0.204"
-| where isnotempty(RemoteUrl)
-| where RemoteUrl !has "microsoft" and RemoteUrl !has "windows" and RemoteUrl !has "adobe" and RemoteUrl !has "mcafee" and RemoteUrl !has "google"
-| project TimeGenerated, DeviceName, RemoteUrl
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where RemoteIP == "10.1.0.189" and RemotePort == 22
+| project TimeGenerated, DeviceName, LocalIP, RemoteIP, RemotePort, InitiatingProcessCommandLine
 
 ```
-<img width="1923" height="739" alt="BT_Q4" src="https://github.com/user-attachments/assets/7f6c69c3-cb4e-4b72-be3e-00c6f0c7358f" />
+<img width="2657" height="761" alt="DITW_Q2B" src="https://github.com/user-attachments/assets/b822c22f-3fdf-4f62-9023-e60369d8040c" />
 
 ---
 
