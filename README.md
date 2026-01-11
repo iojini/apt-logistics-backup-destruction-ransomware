@@ -516,7 +516,7 @@ Before encryption, the threat actor disabled all recovery mechanisms including V
 
 ---
 
-This timeline reconstructs the chronological sequence of attacker activities across both Linux and Windows environments. The attack progressed systematically from initial reconnaissance on November 24, 2025, through credential theft and backup enumeration, culminating in a coordinated multi-phase ransomware deployment on November 25, 2025. The attacker demonstrated sophisticated operational security by first eliminating all backup infrastructure on the Linux backup server before deploying ransomware to Windows systems, followed by comprehensive recovery inhibition measures and anti-forensic activities to complicate incident response.
+This timeline reconstructs the chronological sequence of the threat actor's activities across both Linux and Windows environments. The attack progressed systematically from initial reconnaissance on November 24, 2025, through credential theft and backup enumeration, culminating in a coordinated multi-phase ransomware deployment on November 25, 2025. The threat actor demonstrated sophisticated operational security by first eliminating all backup infrastructure on the Linux backup server before deploying ransomware to Windows systems, followed by comprehensive recovery inhibition measures and anti-forensic activities to complicate incident response.
 
 ---
 
