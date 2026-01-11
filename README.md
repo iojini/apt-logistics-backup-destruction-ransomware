@@ -386,26 +386,87 @@ DeviceProcessEvents
 
 ### 19. Impact: Catalog Deletion
 
-Searched for evidence of...
+Searched for evidence of backup catalog deletion and discovered that the threat actor executed the following command to delete the Windows Backup catalog database: "wbadmin" delete catalog -quiet. Without the catalog, Windows Backup cannot locate or restore any previous backups, even if the backup files still exist.
 
-the exfiltration server IP address and discovered that the server IP that received the stolen data was 45.112.123.227. This IP address corresponds to gofile.io's upload infrastructure.
 
 **Query used to locate events:**
 
 ```kql
-DeviceNetworkEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where RemoteUrl has "gofile.io"
-| project TimeGenerated, RemoteUrl, RemoteIP
-| order by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName == "wbadmin.exe"
+| where ProcessCommandLine contains "catalog" or ProcessCommandLine contains "delete"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="1841" height="277" alt="BT_Q23" src="https://github.com/user-attachments/assets/e74a14f2-56ba-4fe7-92c5-6c924d75974c" />
+<img width="2038" height="336" alt="DITW_Q22" src="https://github.com/user-attachments/assets/d11273e0-0426-47f0-949f-57a9acb45a43" />
 
 ---
 
-### 20. Credential Access: Master Password Extraction
+### 20. Persistence: Registry Autorun
+
+Searched for registry autorun modifications and discovered that the threat actor created a registry Run key named WindowsSecurityHealth. This was configured to execute a malicious binary, silentlynx.exe, located in the C:\Windows\Temp\ directory upon user login. By using a value name that mimics a legitimate Windows security component, it's able to masquerade as a system process in order to avoid detection and ensure that the malware remains active across system reboots.
+
+**Query used to locate events:**
+
+```kql
+DeviceRegistryEvents
+| where TimeGenerated >= datetime(2025-11-25 05:00:00)
+| where DeviceName contains "azuki"
+| where RegistryKey contains "Run" 
+| project TimeGenerated, DeviceName, ActionType, RegistryKey, RegistryValueName, RegistryValueData
+| sort by TimeGenerated asc
+
+```
+<img width="2701" height="381" alt="DITW_Q23" src="https://github.com/user-attachments/assets/c1c0ffd7-dde1-434c-a600-a57693987906" />
+
+---
+
+### 21. XXXXX
+
+Searched for evidence of master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
+
+**Query used to locate events:**
+
+```kql
+DeviceFileEvents
+| where TimeGenerated >= datetime(2025-11-19)
+| where DeviceName == "azuki-adminpc"
+| where ActionType == "FileCreated"
+| where FileName has "master"
+| where FileName endswith ".txt"
+| project TimeGenerated, FileName, FolderPath
+| order by TimeGenerated asc
+
+```
+<img width="2099" height="279" alt="BT_Q25" src="https://github.com/user-attachments/assets/fc460c31-6c9f-48da-b9e6-0d09915ff9cc" />
+
+---
+
+### 22. XXXXX
+
+Searched for evidence of master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
+
+**Query used to locate events:**
+
+```kql
+DeviceFileEvents
+| where TimeGenerated >= datetime(2025-11-19)
+| where DeviceName == "azuki-adminpc"
+| where ActionType == "FileCreated"
+| where FileName has "master"
+| where FileName endswith ".txt"
+| project TimeGenerated, FileName, FolderPath
+| order by TimeGenerated asc
+
+```
+<img width="2099" height="279" alt="BT_Q25" src="https://github.com/user-attachments/assets/fc460c31-6c9f-48da-b9e6-0d09915ff9cc" />
+
+---
+
+### 23. XXXXX
 
 Searched for evidence of master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
 
