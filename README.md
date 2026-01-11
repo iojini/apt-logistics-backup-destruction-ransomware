@@ -424,30 +424,30 @@ DeviceRegistryEvents
 
 ---
 
-### 21. XXXXX
+### 21. Persistence: Scheduled Execution
 
-Searched for evidence of master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
+Searched for evidence of scheduled task persistence and discovered that the threat actor created a scheduled task under the Microsoft\Windows\Security path to execute silentlynx.exe at user logon with highest privileges. The task name SecurityHealthService mimics legitimate Windows security tasks, providing stealth and persistence through system reboots and user session changes. This provides redundant persistence alongside the registry autorun mechanism.
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where ActionType == "FileCreated"
-| where FileName has "master"
-| where FileName endswith ".txt"
-| project TimeGenerated, FileName, FolderPath
-| order by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28)) 
+| where DeviceName contains "azuki" 
+| where FileName == "schtasks.exe" 
+| where ProcessCommandLine contains "create" 
+| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine
 
 ```
-<img width="2099" height="279" alt="BT_Q25" src="https://github.com/user-attachments/assets/fc460c31-6c9f-48da-b9e6-0d09915ff9cc" />
+<img width="2775" height="877" alt="DITW_Q24B" src="https://github.com/user-attachments/assets/f04ce935-edd8-43ce-9b93-d62dcc226f26" />
 
 ---
 
-### 22. XXXXX
+### 22. Defense Evasion: Journal Deletion
 
-Searched for evidence of master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
+Searched for evidence of... 
+
+master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
 
 **Query used to locate events:**
 
