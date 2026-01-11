@@ -237,7 +237,7 @@ DeviceProcessEvents
 
 ---
 
-### 12. Lateral Movement: Remote Execution & Deployment
+### 12. Lateral Movement: Remote Execution, Deployment, & Malicious Payload
 
 Searched for evidence of remote execution tool usage and discovered that the threat actor utilized the following tool to execute commands on remote systems: PsExec64.exe. PsExec64 is a Sysinternals remote administration tool that is commonly repurposed by threat actors for malware deployment. The tool was executed from the compromised CEO workstation (i.e., azuki-adminpc) and likely used to execute commands on multiple remote Windows systems simultaneously. In addition, the threat actor executed the following deployment command: "PsExec64.exe" \\10.1.0.102 -u kenji.sato -p ********** -c -f C:\Windows\Temp\cache\silentlynx.exe. The full PsExec64 command shows the target system (10.1.0.102), use of the kenji.sato account credentials, and the path to the ransomware payload executable. The -c flag copies the specified executable to the remote host for execution, and -f forces the copy even if a file with the same name already exists on the remote system. The the ransomware payload "silentlynx.exe" was deployed to C:\Windows\Temp\cache\.
 
@@ -258,28 +258,28 @@ DeviceProcessEvents
 
 ### 13. Impact: Shadow Service Stopped 
 
-Searched for evidence of... 
-
-a data staging directory and discovered that the attacker staged the stolen data archives in C:\ProgramData\Microsoft\Crypto\staging. The staging directory mimics the legitimate Microsoft cryptographic service directory to avoid suspicion during incident response and was used to organize five archives of stolen business data.
+Searched for evidence of shadow copy service disruption and discovered that the threat actor executed the following command to programmatically terminate the Volume Shadow Copy Service: "net" stop VSS /y. This immediately stopped the VSS service on multiple systems, using the /y flag to bypass interactive confirmation prompts. The threat actor likely executed this command to prevent the OS from creating automated recovery points during the encryption process, thereby hindering data restoration efforts.
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where FileName endswith ".tar.gz"
-| project TimeGenerated, FileName, FolderPath, ActionType
-| order by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where ProcessCommandLine contains "vss" and ProcessCommandLine contains "stop"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2298" height="672" alt="BT_Q17" src="https://github.com/user-attachments/assets/929288ff-8dd1-4a05-ae86-f3ed08b27e73" />
+<img width="1788" height="481" alt="DITW_Q16" src="https://github.com/user-attachments/assets/8ad49792-c574-4e34-82ff-d9d4482dca04" />
 
 ---
 
-### 14. Collection: Automated Data Collection 
+### 14. Impact: Backup Engine Stopped 
 
-Searched for evidence of bulk data theft operations and discovered that the attacker utilized the following robocopy command with retry logic and network optimization flags to copy the CEO's banking documents to a hidden staging directory: "Robocopy.exe" C:\Users\yuki.tanaka\Documents\Banking C:\ProgramData\Microsoft\Crypto\staging\Banking /E /R:1 /W:1 /NP.
+Searched for evidence of...
+
+bulk data theft operations and discovered that the attacker utilized the following robocopy command with retry logic and network optimization flags to copy the CEO's banking documents to a hidden staging directory: "Robocopy.exe" C:\Users\yuki.tanaka\Documents\Banking C:\ProgramData\Microsoft\Crypto\staging\Banking /E /R:1 /W:1 /NP.
 
 
 **Query used to locate events:**
