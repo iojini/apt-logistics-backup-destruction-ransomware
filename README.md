@@ -21,7 +21,7 @@ The threat actor demonstrated advanced operational maturity through coordinated 
 
 ### 1. Lateral Movement: Remote Access & Compromised Account
 
-Searched for evidence of SSH lateral movement and discovered that the threat actor executed the following remote access command from the compromised workstation (azuki-adminpc): "ssh.exe" backup-admin@10.1.0.189. This established remote access to the Linux backup server at 10.1.0.189. This lateral movement occurred after the initial CEO PC compromise, indicating a deliberate escalation phase targeting recovery infrastructure. In addition, analysis of the SSH connection details confirmed that the attacker used the backup-admin account to access the Linux backup server. This administrative account likely had elevated privileges on the backup infrastructure, providing full access to backup directories and scheduled jobs.
+Searched for evidence of SSH lateral movement and discovered that the threat actor executed the following remote access command from the compromised workstation (azuki-adminpc): "ssh.exe" backup-admin@10.1.0.189. This established remote access to the Linux backup server at 10.1.0.189. This lateral movement occurred after the initial CEO PC compromise, indicating a deliberate escalation phase targeting recovery infrastructure. In addition, analysis of the SSH connection details confirmed that the threat actor used the backup-admin account to access the Linux backup server. This administrative account likely had elevated privileges on the backup infrastructure, providing full access to backup directories and scheduled jobs.
 
 **Query used to locate events:**
 
