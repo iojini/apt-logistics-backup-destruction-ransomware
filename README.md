@@ -445,30 +445,31 @@ DeviceProcessEvents
 
 ### 22. Defense Evasion: Journal Deletion
 
-Searched for evidence of... 
-
-master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
+Searched for evidence of anti-forensic activities (i.e., journal deletion) and discovered that the threat actor executed the following file system utility command to delete the NTFS Update Sequence Number (USN) journal: "fsutil.exe" usn deletejournal /D C:. This removes the file system journal that tracks every file system change including creates, deletes, modifications, and renames; thereby, eliminating critical forensic evidence needed to reconstruct ransomware encryption activity and determine the full scope of file modifications.
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where ActionType == "FileCreated"
-| where FileName has "master"
-| where FileName endswith ".txt"
-| project TimeGenerated, FileName, FolderPath
-| order by TimeGenerated asc
-
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName in~ ("fsutil.exe", "wevtutil.exe")
+| where ProcessCommandLine contains "delete" 
+    or ProcessCommandLine contains "usn"
+    or ProcessCommandLine contains "journal"
+    or ProcessCommandLine contains "clear"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 ```
-<img width="2099" height="279" alt="BT_Q25" src="https://github.com/user-attachments/assets/fc460c31-6c9f-48da-b9e6-0d09915ff9cc" />
+<img width="2082" height="265" alt="DITW_Q25" src="https://github.com/user-attachments/assets/72d7245c-cd5e-4788-ba89-a75c458f6db8" />
 
 ---
 
-### 23. XXXXX
+### 23. Impact: Ransom Note
 
-Searched for evidence of master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
+Searched for evidence of...
+
+master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
 
 **Query used to locate events:**
 
