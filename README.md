@@ -467,24 +467,20 @@ DeviceProcessEvents
 
 ### 23. Impact: Ransom Note
 
-Searched for evidence of...
-
-master password extraction and discovered the following file which contained the extracted KeePass master password: KeePass-Master-Password.txt. The master password file was a plaintext file stored in the Documents\Passwords folder, providing the attacker with access to all credentials stored in the KeePass database.
+Searched for ransom note file creation events and discovered that the ransom note file SILENTLYNX_README.txt was created by silentlynx.exe and deployed to Desktop and Documents folders across compromised systems. The filename branding "SILENTLYNX" aligns with the ransomware executable name "silentlynx.exe" and ADE SPIDER's operational patterns. 
 
 **Query used to locate events:**
 
 ```kql
 DeviceFileEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where ActionType == "FileCreated"
-| where FileName has "master"
-| where FileName endswith ".txt"
-| project TimeGenerated, FileName, FolderPath
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28)) 
+| where DeviceName contains "azuki" 
+| where FileName endswith ".txt" 
+| where ActionType == "FileCreated" 
+| project TimeGenerated, DeviceName, ActionType, FileName, FolderPath, InitiatingProcessFileName
 
 ```
-<img width="2099" height="279" alt="BT_Q25" src="https://github.com/user-attachments/assets/fc460c31-6c9f-48da-b9e6-0d09915ff9cc" />
+<img width="2684" height="430" alt="DITW_Q26" src="https://github.com/user-attachments/assets/75e61221-91fa-45f7-8041-7b710dec5869" />
 
 ---
 
