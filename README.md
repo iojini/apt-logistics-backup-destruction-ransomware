@@ -486,15 +486,9 @@ DeviceFileEvents
 
 ## Summary
 
-The investigation revealed a sophisticated post-compromise operation targeting the CEO's administrative workstation. The attacker returned five days after the initial November 19-20, 2025 file server breach, conducting lateral movement from the previously compromised system at 10.1.0.204 to azuki-adminpc using the compromised yuki.tanaka account credentials. The operation demonstrated advanced tactics consistent with ADE SPIDER (APT-SL44, SilentLynx) including infrastructure rotation (litter.catbox.moe for payload delivery), masqueraded payload (payload disguised as Windows update KB5044273-x64.7z), and sophisticated command-and-control deployment using Meterpreter with named pipe msf-pipe-5902.
+The analysis revealed a sophisticated ransomware attack against Azuki Import & Export Trading Co. The threat actor demonstrated advanced capabilities including cross-platform compromise (Linux and Windows), systematic backup elimination, comprehensive recovery inhibition, dual persistence mechanisms, and anti-forensics measures. The attacker first compromised the Linux backup infrastructure via SSH from a previously compromised CEO workstation, systematically destroyed all backups, downloaded attack tools from external C2 infrastructure, then pivoted to Windows systems using PsExec to deploy the SILENTLYNX ransomware. 
 
-The attacker established redundant persistence through creation of backdoor account yuki.tanaka2 with Administrator privileges, ensuring continued access even if primary credentials were reset. Comprehensive discovery activities included RDP session enumeration (qwinsta), domain trust mapping (nltest /domain_trusts /all_trusts), and network connection enumeration (netstat -ano), demonstrating systematic environmental reconnaissance.
-
-Credential theft operations targeted multiple high-value sources: KeePass password database Passwords.kdbx with plaintext master password in KeePass-Master-Password.txt, Chrome browser credentials via Mimikatz DPAPI extraction, and systematic collection of financial documents using Robocopy with retry logic and network optimization. Eight distinct archives were created in the hidden staging directory C:\ProgramData\Microsoft\Crypto\staging, masquerading as legitimate Windows cryptographic services.
-
-Exfiltration operations transferred the archives to gofile.io cloud storage (45.112.123.227) using curl with form-based POST uploads. The comprehensive nature of this exfiltration indicates intent to maintain long-term access to organizational credentials and sensitive business intelligence.
-
-The sophistication of this attack, including multiple persistence mechanisms, renamed tool usage (m.exe for Mimikatz), masqueraded staging directories, and systematic multi-target collection, is consistent with ADE SPIDER's known tactics, techniques, and procedures. The targeting of a logistics company CEO in East Asia aligns with the group's established operational patterns and financial motivation.
+Before encryption, the attacker disabled all recovery mechanisms including VSS, Windows Backup, and boot recovery, terminated database and application processes to unlock files, established persistence through registry autoruns and scheduled tasks, and deleted forensic evidence. The sophistication of this attack, including the pre-encryption elimination of backup infrastructure and the use of multiple persistence mechanisms, indicates an experienced threat actor with in-depth knowledge of enterprise backup architectures and Windows recovery mechanisms.
 
 ---
 
@@ -544,28 +538,23 @@ The sophistication of this attack, including multiple persistence mechanisms, re
 
 | TTP ID | TTP Name | Description | Detection Relevance |
 |:--------:|:----------:|:-------------:|:---------------------:|
-| T1021.001 | Remote Services: Remote Desktop Protocol | Lateral movement from 10.1.0.204 to azuki-adminpc via RDP using compromised yuki.tanaka account | Detects unauthorized lateral movement and credential reuse from previously compromised systems |
-| T1078 | Valid Accounts: Local Accounts | Use of compromised yuki.tanaka credentials for authentication during lateral movement and privilege escalation | Identifies authentication with compromised credentials across multiple systems |
-| T1204.002 | User Execution: Malicious File | Execution of payload KB5044273-x64.7z masquerading as Windows update package | Detects masquerading through file naming and execution of suspicious archives |
-| T1573.001 | Encrypted Channel: Symmetric Cryptography | Meterpreter C2 communication via named pipe msf-pipe-5902 for command execution | Identifies Metasploit Framework indicators and named pipe C2 channels |
-| T1136.001 | Create Account: Local Account | Creation of backdoor account yuki.tanaka2 for persistent access | Detects suspicious account creation with naming patterns similar to legitimate users |
-| T1098 | Account Manipulation | Addition of yuki.tanaka2 to Administrators group via net localgroup command | Identifies privilege escalation through group membership modifications |
-| T1087.001 | Account Discovery: Local Account | Execution of query session to enumerate active RDP sessions | Detects reconnaissance of logged-in users and session information |
-| T1482 | Domain Trust Discovery | Execution of nltest /domain_trusts to map Active Directory trust relationships | Identifies reconnaissance of domain architecture and potential lateral movement paths |
-| T1049 | System Network Connections Discovery | Execution of netstat -ano to enumerate active TCP/IP connections and listening ports | Detects network reconnaissance and service discovery activities |
-| T1555.005 | Credentials from Password Stores: Password Managers | Discovery and theft of KeePass database Passwords.kdbx with plaintext master password | Identifies targeting of password manager databases and credential stores |
-| T1555.003 | Credentials from Password Stores: Credentials from Web Browsers | Mimikatz dpapi::chrome extraction of Chrome browser credentials via DPAPI | Detects credential dumping from browser databases using DPAPI decryption |
-| T1003.001 | OS Credential Dumping: LSASS Memory | Use of Mimikatz (m.exe) for credential extraction operations | Identifies renamed Mimikatz instances and credential dumping activities |
-| T1119 | Automated Collection | Robocopy execution with /E /R:1 /W:1 flags for systematic financial document collection | Detects bulk data collection with retry logic and attribute preservation |
-| T1074.001 | Data Staged: Local Data Staging | Use of C:\ProgramData\Microsoft\Crypto\staging directory for data consolidation | Identifies hidden staging directories masquerading as system folders |
-| T1560.001 | Archive Collected Data: Archive via Utility | Use of tar.exe to create 8 compressed archives of stolen data | Detects cross-platform compression tools and bulk archive creation |
-| T1567.002 | Exfiltration Over Web Service: Exfiltration to Cloud Storage | Curl POST uploads to gofile.io (45.112.123.227) for data exfiltration | Identifies file uploads to anonymous cloud storage services |
-| T1036.005 | Masquerading: Match Legitimate Name or Location | Payload named KB5044273-x64.7z to appear as Windows update; m.exe to hide Mimikatz | Detects file masquerading and renamed security tools |
-| T1027 | Obfuscated Files or Information | Use of 7z compression for payload delivery and staging directory name obfuscation | Identifies obfuscation techniques and suspicious archive formats |
+| T1021.004 | Remote Services: SSH | SSH used for lateral movement to Linux backup server | Identifies initial access vector and cross-platform compromise |
+| T1021.002 | Remote Services: SMB/Windows Admin Shares | PsExec deployment across Windows systems | Detects ransomware distribution method |
+| T1552.001 | Unsecured Credentials: Credentials In Files | Credentials stolen from all-credentials.txt on backup server | Reveals credential compromise enabling lateral movement |
+| T1083 | File and Directory Discovery | Directory enumeration and file searches for backup archives | Shows reconnaissance phase targeting backup infrastructure |
+| T1053.005 | Scheduled Task/Job: Scheduled Task | Reconnaissance of cron jobs and creation of malicious scheduled task | Identifies backup timing intelligence and persistence mechanism |
+| T1105 | Ingress Tool Transfer | Download of destroy.7z from litter.catbox.moe | Reveals C2 infrastructure and tool staging |
+| T1485 | Data Destruction | Systematic destruction of all backup directories on Linux server | Critical impact event eliminating recovery capabilities |
+| T1489 | Service Stop | Multiple services stopped and disabled (cron, VSS, wbengine) | Shows systematic disabling of backup and recovery services |
+| T1490 | Inhibit System Recovery | Shadow copies deleted, storage limited, recovery disabled, catalog deleted | Comprehensive recovery inhibition across multiple mechanisms |
+| T1562.001 | Impair Defenses: Disable or Modify Tools | Process termination of databases and applications to unlock files | Enables file encryption by removing file locks |
+| T1547.001 | Boot or Logon Autostart Execution: Registry Run Keys | WindowsSecurityHealth registry value for ransomware persistence | Primary persistence mechanism ensuring re-infection |
+| T1070.004 | Indicator Removal: File Deletion | USN journal deletion to remove forensic evidence | Anti-forensics measure hindering investigation |
+| T1486 | Data Encrypted for Impact | SILENTLYNX ransomware deployment and encryption with ransom notes | Final impact demonstrating successful ransomware operation |
 
 ---
 
-This table organizes the MITRE ATT&CK techniques (TTPs) observed during the investigation. The detection methods identified both the attack techniques and enabled confirmation of the threat actor's sophistication through multiple layers of persistence, discovery, credential theft, collection, and exfiltration operations.
+This table organizes the MITRE ATT&CK techniques observed during the investigation. The detection methods identified cross-platform compromise between Linux and Windows systems, systematic backup destruction, comprehensive recovery inhibition through multiple mechanisms, and dual persistence layers. The attack included multi-target ransomware deployment via PsExec and anti-forensic activities to complicate incident response. The breadth and coordination of these techniques demonstrated advanced threat actor capabilities consistent with experienced ransomware operators.
 
 ---
 
