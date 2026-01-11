@@ -496,41 +496,27 @@ Before encryption, the attacker disabled all recovery mechanisms including VSS, 
 
 | Time (UTC) | Action Observed | Key Evidence |
 |:------------:|:-----------------:|:--------------:|
-| 2025-11-20 15:01:44 | Password Database Located | Passwords.kdbx discovered in Documents\Passwords\ |
-| 2025-11-20 15:01:44 | Master Password File Present | KeePass-Master-Password.txt stored in plaintext |
-| 2025-11-24 14:31:24 | Network Connection Enumeration | netstat.exe -ano executed for reconnaissance |
-| 2025-11-25 04:06:36 | Lateral Movement: Initial RDP Access | RDP connection from 10.1.0.204 using yuki.tanaka account |
-| 2025-11-25 04:08:58 | RDP Session Enumeration | qwinsta.exe executed to enumerate active sessions |
-| 2025-11-25 04:09:25 | Domain Trust Enumeration | nltest.exe /domain_trusts /all_trusts executed |
-| 2025-11-25 04:13:48 | Password Database Search | cmd.exe executed where /r C:\Users *.kdbx |
-| 2025-11-25 04:21:11 | Malware Download | KB5044273-x64.7z downloaded via curl.exe from litter.catbox.moe |
-| 2025-11-25 04:21:12 | Payload Hosting Service Connection | Connection to litter.catbox.moe (162.159.130.233) |
-| 2025-11-25 04:21:33 | Archive Extraction | 7z.exe extracted KB5044273-x64.7z payload |
-| 2025-11-25 04:21:33 | C2 Implant Extraction | meterpreter.exe extracted from archive |
-| 2025-11-25 04:24:35 | C2 Implant Deployment | Meterpreter named pipe msf-pipe-5902 established |
-| 2025-11-25 04:25:14 | Backdoor Account Created | yuki.tanaka2 account created |
-| 2025-11-25 04:25:18 | Privilege Escalation | yuki.tanaka2 added to Administrators group |
-| 2025-11-25 04:25:59 | Collection: Chrome Credentials Archive | chrome-credentials.tar.gz created in staging directory |
-| 2025-11-25 04:36:09 | Collection: Banking Documents | Robocopy.exe copied banking documents to staging |
-| 2025-11-25 04:39:16 | Collection: First Archive Creation | tar.exe created credentials.tar.gz |
-| 2025-11-25 04:39:23 | Collection: QuickBooks Data | quickbooks-data.tar.gz created |
-| 2025-11-25 04:40:00 | Collection: Tax Documents | tax-documents.tar.gz created |
-| 2025-11-25 04:40:30 | Collection: Contracts Data | contracts-data.tar.gz created |
-| 2025-11-25 04:41:51 | Exfiltration: First Archive Upload | credentials.tar.gz uploaded to gofile.io |
-| 2025-11-25 04:41:52 | Exfiltration: Destination Server | gofile.io (45.112.123.227) received stolen data |
-| 2025-11-25 04:42:04 | Exfiltration: QuickBooks Upload | quickbooks-data.tar.gz uploaded to gofile.io |
-| 2025-11-25 04:42:13 | Exfiltration: Banking Records Upload | banking-records.tar.gz uploaded to gofile.io |
-| 2025-11-25 04:42:23 | Exfiltration: Tax Documents Upload | tax-documents.tar.gz uploaded to gofile.io |
-| 2025-11-25 04:42:33 | Exfiltration: Contracts Upload | contracts-data.tar.gz uploaded to gofile.io |
-| 2025-11-25 04:49:19 | Exfiltration: Chrome Credentials Upload | chrome-credentials.tar.gz uploaded to gofile.io |
-| 2025-11-25 05:55:34 | Tool Download | m.exe (Mimikatz) downloaded via curl.exe |
-| 2025-11-25 05:55:54 | Browser Credential Theft | Mimikatz dpapi::chrome extracted Chrome credentials |
-| 2025-11-25 05:56:42 | Collection: Chrome Session Theft | chrome-session-theft.tar.gz created (8th archive) |
-| 2025-11-25 05:56:50 | Exfiltration: Final Archive Upload | chrome-session-theft.tar.gz uploaded to gofile.io |
+| 2025-11-24 14:13:34Z | Directory Enumeration | ls --color=auto -la /backups/ executed on backup server |
+| 2025-11-24 14:14:14Z | Credential Theft | Access to all-credentials.txt containing stored credentials |
+| 2025-11-24 14:16:06Z | File Search | find /backups -name *.tar.gz to identify backup archives |
+| 2025-11-24 14:16:08Z | Account and Job Reconnaissance | Enumeration of /etc/passwd and /etc/crontab for backup schedules |
+| 2025-11-25 05:39:10Z | SSH Lateral Movement | SSH connection from 10.1.0.108 (azuki-adminpc) to backup server using backup-admin account |
+| 2025-11-25 05:45:34Z | Tool Transfer | Download of destroy.7z from litter.catbox.moe via curl |
+| 2025-11-25 05:47:02Z | Backup Destruction | rm -rf /backups/archives - systematic deletion of all backup directories |
+| 2025-11-25 05:47:03Z | Service Disruption | systemctl stop cron and systemctl disable cron to prevent scheduled backups |
+| 2025-11-25 05:58:55Z | Recovery Point Deletion | vssadmin.exe delete shadows /all /quiet - all shadow copies deleted |
+| 2025-11-25 05:59:56Z | Storage Limitation | vssadmin resize shadowstorage to 401MB maximum |
+| 2025-11-25 06:03:47Z | Ransomware Deployment | PsExec64.exe deployment of silentlynx.exe to target systems |
+| 2025-11-25 06:04:53Z | Shadow Service Stopped | net stop VSS /y to halt shadow copy service |
+| 2025-11-25 06:04:54Z | Backup Engine Stopped | net stop wbengine /y to halt Windows Backup Engine |
+| 2025-11-25 06:04:57Z | Process Termination | taskkill /F /IM sqlservr.exe and other database/application processes |
+| 2025-11-25 06:04:59Z | Recovery Disabled | bcdedit to disable recovery environment and wbadmin delete catalog |
+| 2025-11-25 06:05:01Z | Persistence and Impact | Registry autorun (WindowsSecurityHealth), scheduled task (SecurityHealthService), and SILENTLYNX_README.txt deployed |
+| 2025-11-25 06:10:04Z | Anti-Forensics | fsutil.exe usn deletejournal /D C: to remove forensic evidence |
 
 ---
 
-**Note:** Password database files were present on the system since November 20. Network reconnaissance occurred on November 24, prior to the November 25 lateral movement, suggesting earlier compromise phases. The attack progressed systematically from initial access through credential theft, data collection, and multi-stage exfiltration over approximately 2 hours.
+This timeline reconstructs the chronological sequence of attacker activities across both Linux and Windows environments. The attack progressed systematically from initial reconnaissance on November 24, 2025, through credential theft and backup enumeration, culminating in a coordinated multi-phase ransomware deployment on November 25, 2025. The attacker demonstrated sophisticated operational security by first eliminating all backup infrastructure on the Linux backup server before deploying ransomware to Windows systems, followed by comprehensive recovery inhibition measures and anti-forensic activities to complicate incident response.
 
 ---
 
