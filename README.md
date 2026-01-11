@@ -277,29 +277,31 @@ DeviceProcessEvents
 
 ### 14. Impact: Backup Engine Stopped 
 
-Searched for evidence of...
-
-bulk data theft operations and discovered that the attacker utilized the following robocopy command with retry logic and network optimization flags to copy the CEO's banking documents to a hidden staging directory: "Robocopy.exe" C:\Users\yuki.tanaka\Documents\Banking C:\ProgramData\Microsoft\Crypto\staging\Banking /E /R:1 /W:1 /NP.
-
+Searched for evidence of backup engine disruption and discovered that the threat actor executed the following command to stop the Windows Backup Engine: "net" stop wbengine /y. This was likely done to stop Windows Backup from creating automated backups during encryption (i.e., the attack).
 
 **Query used to locate events:**
 
 ```kql
 DeviceProcessEvents
-| where TimeGenerated >= datetime(2025-11-19)
-| where DeviceName == "azuki-adminpc"
-| where FileName in~ ("robocopy.exe", "xcopy.exe", "copy.exe") 
-| project TimeGenerated, FileName, ProcessCommandLine
-| order by TimeGenerated asc
+| where TimeGenerated between (datetime(2025-11-20) .. datetime(2025-11-28))
+| where DeviceName contains "azuki"
+| where FileName in~ ("net.exe", "net1.exe", "sc.exe")
+| where ProcessCommandLine contains "stop"
+| where ProcessCommandLine contains "backup" 
+    or ProcessCommandLine contains "wbengine"
+| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine
+| sort by TimeGenerated asc
 
 ```
-<img width="2662" height="460" alt="BT_Q18" src="https://github.com/user-attachments/assets/a3422e13-0fdc-4681-af5d-bb60846ee254" />
+<img width="1828" height="480" alt="DITW_Q17" src="https://github.com/user-attachments/assets/1e503ca0-9c3f-4418-9a49-a0477d10d6bf" />
 
 ---
 
-### 15. Collection: Exfiltration Volume
+### 15. Defense Evasion: Process Termination
 
-Searched for archive file creation events in the staging directory to identify the volume of data prepared for exfiltration and discovered that the attacker created eight distinct archives, representing comprehensive data collection across financial records, credentials, business contracts, and authentication databases. 
+Searched for evidence of...
+
+archive file creation events in the staging directory to identify the volume of data prepared for exfiltration and discovered that the attacker created eight distinct archives, representing comprehensive data collection across financial records, credentials, business contracts, and authentication databases. 
 
 **Query used to locate events:**
 
