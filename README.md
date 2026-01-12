@@ -2,12 +2,12 @@
 
 ## Executive Summary
 
-Azuki Import & Export Trading Co. experienced a catastrophic ransomware attack on November 25, 2025, marking the culmination of a week-long intrusion. The investigation revealed a sophisticated multi-phase operation beginning with lateral movement from the compromised CEO workstation (azuki-adminpc) to the Linux backup server via SSH. This was followed by the: (1) systematic destruction of backup infrastructure; (2) Windows-based ransomware deployment using PsExec across multiple systems; (3) comprehensive recovery inhibition techniques; (4) establishment of persistent access mechanisms; (5) anti-forensic activities to eliminate evidence; and (6) successful encryption of organizational data with ransom note deployment. 
+Azuki Import & Export Trading Co. experienced a catastrophic ransomware attack on November 25, 2025, marking the culmination of a week-long intrusion. The investigation revealed a sophisticated multi-phase operation beginning with lateral movement from the compromised CEO workstation (azuki-adminpc) to the Linux backup server via SSH. This was followed by the: systematic destruction of backup infrastructure; Windows-based ransomware deployment using PsExec across multiple systems; comprehensive recovery inhibition techniques; establishment of persistent access mechanisms; anti-forensic activities to eliminate evidence; and successful encryption of organizational data with ransom note deployment. 
 
 The threat actor demonstrated advanced operational maturity through coordinated backup destruction on Linux systems, simultaneous ransomware deployment to multiple Windows targets using stolen credentials, multiple layers of recovery inhibition including shadow copy deletion and backup catalog removal, registry and scheduled task persistence mechanisms, and USN journal deletion for anti-forensics. This investigation reconstructs the complete attack timeline, documenting tactics consistent with ADE SPIDER (APT-SL44, SilentLynx) operations targeting logistics companies in the East Asia region.
 
 ## Background
-- **Incident Date:** November 25-27, 2025  
+- **Incident Date:** November 24-25, 2025  
 - **Compromised Host:** Linux backup server (azuki-backupsrv), Multiple Windows systems  
 - **Threat Actor:** ADE SPIDER (APT-SL44, SilentLynx)
 - **Motivation:** Financial  
